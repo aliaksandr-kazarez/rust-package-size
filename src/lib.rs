@@ -12,8 +12,7 @@ pub struct RustResult {
 /// Initialize the SDK - demonstrates startup costs
 #[no_mangle]
 pub extern "C" fn rust_sdk_init() -> bool {
-    // Simulate some initialization work
-    println!("Rust SDK initialized successfully");
+    // Removed println! to reduce binary size (fmt is heavy)
     true
 }
 
@@ -46,15 +45,17 @@ pub extern "C" fn rust_sdk_process_string(input: *const c_char) -> RustResult {
         }
     };
 
-    // Do some processing
-    let processed = format!("Processed: {} (length: {})", input_str, input_str.len());
-    let c_string = CString::new(processed).unwrap();
-    let ptr = c_string.into_raw();
+    // Simple processing without format! macro (which adds size)
+    let len = input_str.len();
+    
+    // Create a simpler response message
+    let response = b"Processed string\0";
+    let message_ptr = response.as_ptr() as *const c_char;
 
     RustResult {
         success: true,
-        value: input_str.len() as i32,
-        message: ptr,
+        value: len as i32,
+        message: message_ptr,
     }
 }
 
@@ -68,23 +69,27 @@ pub extern "C" fn rust_sdk_free_string(ptr: *mut c_char) {
     }
 }
 
-/// Demonstrate CPU-intensive work
+/// Demonstrate CPU-intensive work (iterative version is smaller)
 #[no_mangle]
 pub extern "C" fn rust_sdk_fibonacci(n: c_int) -> i64 {
-    fn fib(n: i64) -> i64 {
-        match n {
-            0 => 0,
-            1 => 1,
-            _ => fib(n - 1) + fib(n - 2),
-        }
+    if n <= 1 {
+        return n as i64;
     }
     
-    fib(n as i64)
+    let mut a: i64 = 0;
+    let mut b: i64 = 1;
+    
+    for _ in 2..=n {
+        let temp = a + b;
+        a = b;
+        b = temp;
+    }
+    
+    b
 }
 
-/// Get SDK version
+/// Get SDK version (using static string to avoid allocations)
 #[no_mangle]
 pub extern "C" fn rust_sdk_version() -> *const c_char {
-    let version = CString::new("1.0.0").unwrap();
-    version.into_raw()
+    b"1.0.0\0".as_ptr() as *const c_char
 } 

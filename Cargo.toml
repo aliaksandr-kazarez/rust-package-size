@@ -5,12 +5,25 @@ edition = "2021"
 
 [lib]
 name = "rust_spm_sdk"
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["staticlib"]
 
 [dependencies]
-libc = "0.2"
+libc = { version = "0.2", default-features = false }
 
 [profile.release]
-lto = true
+# Size optimizations
+opt-level = "z"          # Optimize for size
+lto = true               # Link-time optimization
+codegen-units = 1        # Single codegen unit
+panic = "abort"          # Smaller panic handling
+strip = true             # Strip debug symbols
+overflow-checks = false  # Disable overflow checks in release
+
+# Additional size optimizations
+[profile.release.build-override]
+opt-level = "z"
 codegen-units = 1
-panic = "abort" 
+
+# Optimize dependencies for size too
+[profile.release.package."*"]
+opt-level = "z" 

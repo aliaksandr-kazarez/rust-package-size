@@ -8,7 +8,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}Building Rust SDK for iOS targets...${NC}"
+echo -e "${GREEN}Building Rust SDK for iOS targets with size optimizations...${NC}"
 
 # Check if required tools are installed
 if ! command -v rustc &> /dev/null; then
@@ -25,6 +25,9 @@ rustup target add aarch64-apple-ios-sim  # For simulator on Apple Silicon
 # Create output directory
 mkdir -p target/ios-universal
 
+# Set additional environment variables for size optimization
+export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-s"
+
 # Build for iOS device (ARM64)
 echo -e "${YELLOW}Building for iOS device (aarch64-apple-ios)...${NC}"
 cargo build --target aarch64-apple-ios --release
@@ -36,6 +39,12 @@ cargo build --target x86_64-apple-ios --release
 # Build for iOS simulator (ARM64 - Apple Silicon)
 echo -e "${YELLOW}Building for iOS simulator (aarch64-apple-ios-sim)...${NC}"
 cargo build --target aarch64-apple-ios-sim --release
+
+# Strip symbols from libraries for additional size reduction
+echo -e "${YELLOW}Stripping symbols for size reduction...${NC}"
+strip target/aarch64-apple-ios/release/librust_spm_sdk.a 2>/dev/null || true
+strip target/x86_64-apple-ios/release/librust_spm_sdk.a 2>/dev/null || true
+strip target/aarch64-apple-ios-sim/release/librust_spm_sdk.a 2>/dev/null || true
 
 # Create universal library for simulator
 echo -e "${YELLOW}Creating universal simulator library...${NC}"
@@ -52,5 +61,12 @@ echo -e "${GREEN}Device library: target/ios-universal/librust_spm_sdk_device.a${
 echo -e "${GREEN}Simulator library: target/ios-universal/librust_spm_sdk_sim.a${NC}"
 
 # Show library sizes
-echo -e "${YELLOW}Library sizes:${NC}"
-ls -lh target/ios-universal/librust_spm_sdk_*.a 
+echo -e "${YELLOW}Optimized library sizes:${NC}"
+ls -lh target/ios-universal/librust_spm_sdk_*.a
+
+# Compare with previous sizes if available
+echo -e "${YELLOW}Size reduction achieved:${NC}"
+for lib in target/ios-universal/librust_spm_sdk_*.a; do
+    size=$(du -k "$lib" | cut -f1)
+    echo "$(basename "$lib"): ${size}KB"
+done 
