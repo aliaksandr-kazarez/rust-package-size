@@ -1,0 +1,61 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+.cargo/
+
+# XCFramework (generated, should be rebuilt)
+RustCore.xcframework/
+
+# Temporary framework directories
+RustCore-*.framework/
+
+# Xcode
+.DS_Store
+*.xcodeproj/
+*.xcworkspace/
+build/
+DerivedData/
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.hmap
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Documentation generation
+.docc-build/
+docs/
+
+# Testing and profiling
+*.profraw
+*.profdata
+.coverage/
+coverage/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.#*
+
+# Temporary files
+tmp/
+.tmp/
+cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+ehthumbs.db
+Thumbs.db 

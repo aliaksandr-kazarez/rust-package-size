@@ -1,0 +1,16 @@
+[package]
+name = "rust-spm-sdk"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rust_spm_sdk"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+libc = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort" 
