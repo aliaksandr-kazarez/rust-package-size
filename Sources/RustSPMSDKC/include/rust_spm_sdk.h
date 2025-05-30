@@ -24,7 +24,7 @@ int32_t rust_sdk_add(int32_t a, int32_t b);
 /// Process a string and return result
 RustResult rust_sdk_process_string(const char* input);
 
-/// Free memory allocated by Rust
+/// Free memory allocated by Rust (no-op in ultra-minimal version)
 void rust_sdk_free_string(char* ptr);
 
 /// Calculate fibonacci number (CPU intensive)

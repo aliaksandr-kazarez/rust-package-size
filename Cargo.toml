@@ -7,23 +7,30 @@ edition = "2021"
 name = "rust_spm_sdk"
 crate-type = ["staticlib"]
 
+# Remove all dependencies for maximum size reduction
 [dependencies]
-libc = { version = "0.2", default-features = false }
+# Removed libc dependency - we'll use raw FFI
 
 [profile.release]
-# Size optimizations
-opt-level = "z"          # Optimize for size
-lto = true               # Link-time optimization
+# Ultra-aggressive size optimizations
+opt-level = "s"          # Sometimes "s" is smaller than "z"
+lto = "fat"              # Most aggressive LTO
 codegen-units = 1        # Single codegen unit
 panic = "abort"          # Smaller panic handling
-strip = true             # Strip debug symbols
-overflow-checks = false  # Disable overflow checks in release
+strip = "symbols"        # Strip all symbols
+overflow-checks = false  # Disable overflow checks
+debug = false            # No debug info
+rpath = false            # No rpath
+debug-assertions = false # No debug assertions
+incremental = false      # No incremental compilation
 
-# Additional size optimizations
+# Minimize all dependencies
 [profile.release.build-override]
-opt-level = "z"
+opt-level = "s"
 codegen-units = 1
+debug = false
 
-# Optimize dependencies for size too
+# Optimize all dependencies aggressively
 [profile.release.package."*"]
-opt-level = "z" 
+opt-level = "s"
+debug = false 

@@ -1,7 +1,7 @@
 import Foundation
 import RustSPMSDKC
 
-/// Swift wrapper for the Rust SDK
+/// Swift wrapper for the ultra-minimal Rust SDK
 public class RustSDK {
     
     /// Result type for SDK operations
@@ -15,8 +15,8 @@ public class RustSDK {
             self.value = rustResult.value
             if let messagePtr = rustResult.message {
                 self.message = String(cString: messagePtr)
-                // Free the memory allocated by Rust
-                rust_sdk_free_string(UnsafeMutablePointer(mutating: messagePtr))
+                // Note: No need to free memory in ultra-minimal version
+                // The Rust side uses static strings only
             } else {
                 self.message = nil
             }
@@ -51,9 +51,10 @@ public class RustSDK {
         return rust_sdk_add(a, b)
     }
     
-    /// Process a string through the Rust SDK
+    /// Process a string through the ultra-minimal Rust SDK
     /// - Parameter input: Input string to process
     /// - Returns: SDK result containing processing information
+    /// - Note: Ultra-minimal version returns static messages only
     public func processString(_ input: String) -> SDKResult {
         let cString = input.withCString { cStr in
             return rust_sdk_process_string(cStr)
@@ -69,14 +70,13 @@ public class RustSDK {
     }
     
     /// Get the SDK version
-    /// - Returns: Version string
+    /// - Returns: Version string (static, no allocation)
     public func version() -> String {
         guard let versionPtr = rust_sdk_version() else {
             return "Unknown"
         }
-        let version = String(cString: versionPtr)
-        rust_sdk_free_string(UnsafeMutablePointer(mutating: versionPtr))
-        return version
+        // No need to free - ultra-minimal version uses static strings
+        return String(cString: versionPtr)
     }
 }
 
@@ -96,7 +96,7 @@ public extension RustSDK {
         }
     }
     
-    /// Benchmark the SDK performance
+    /// Benchmark the ultra-minimal SDK performance
     /// - Parameter iterations: Number of iterations to run
     /// - Returns: Average time per operation in milliseconds
     func benchmark(iterations: Int = 1000) -> Double {
@@ -110,5 +110,28 @@ public extension RustSDK {
         let totalTime = (endTime - startTime) * 1000 // Convert to milliseconds
         
         return totalTime / Double(iterations)
+    }
+    
+    /// Test all ultra-minimal SDK functions
+    /// - Returns: Performance summary
+    func performanceTest() -> String {
+        let addTime = benchmark(iterations: 10000)
+        let fibTime = measureTime { _ = fibonacci(20) }
+        let stringTime = measureTime { _ = processString("test") }
+        
+        return """
+        Ultra-Minimal SDK Performance:
+        - Add operations: \(String(format: "%.6f", addTime))ms avg
+        - Fibonacci(20): \(String(format: "%.3f", fibTime))ms
+        - String processing: \(String(format: "%.3f", stringTime))ms
+        - Version: \(version())
+        """
+    }
+    
+    private func measureTime<T>(operation: () -> T) -> Double {
+        let start = CFAbsoluteTimeGetCurrent()
+        _ = operation()
+        let end = CFAbsoluteTimeGetCurrent()
+        return (end - start) * 1000 // Convert to milliseconds
     }
 } 

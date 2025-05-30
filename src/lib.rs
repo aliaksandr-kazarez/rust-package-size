@@ -1,18 +1,26 @@
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int};
+#![no_std]
+
+// C types without libc dependency
+type CChar = i8;
+type CInt = i32;
 
 /// Simple struct to demonstrate data handling
 #[repr(C)]
 pub struct RustResult {
     pub success: bool,
     pub value: i32,
-    pub message: *const c_char,
+    pub message: *const CChar,
 }
 
-/// Initialize the SDK - demonstrates startup costs
+/// Ultra-minimal panic handler using stable features
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
+
+/// Initialize the SDK - minimal implementation
 #[no_mangle]
 pub extern "C" fn rust_sdk_init() -> bool {
-    // Removed println! to reduce binary size (fmt is heavy)
     true
 }
 
@@ -22,35 +30,32 @@ pub extern "C" fn rust_sdk_add(a: i32, b: i32) -> i32 {
     a + b
 }
 
-/// More complex function that allocates memory and returns a result
+/// Minimal string length calculation without std
+unsafe fn strlen(s: *const CChar) -> usize {
+    let mut len = 0;
+    while *s.add(len) != 0 {
+        len += 1;
+    }
+    len
+}
+
+/// More complex function with minimal string processing
 #[no_mangle]
-pub extern "C" fn rust_sdk_process_string(input: *const c_char) -> RustResult {
+pub extern "C" fn rust_sdk_process_string(input: *const CChar) -> RustResult {
     if input.is_null() {
         return RustResult {
             success: false,
             value: -1,
-            message: std::ptr::null(),
+            message: core::ptr::null(),
         };
     }
 
-    let c_str = unsafe { CStr::from_ptr(input) };
-    let input_str = match c_str.to_str() {
-        Ok(s) => s,
-        Err(_) => {
-            return RustResult {
-                success: false,
-                value: -1,
-                message: std::ptr::null(),
-            };
-        }
-    };
-
-    // Simple processing without format! macro (which adds size)
-    let len = input_str.len();
+    // Calculate string length manually
+    let len = unsafe { strlen(input) };
     
-    // Create a simpler response message
-    let response = b"Processed string\0";
-    let message_ptr = response.as_ptr() as *const c_char;
+    // Static response message (no allocation)
+    static RESPONSE: &[u8] = b"Processed\0";
+    let message_ptr = RESPONSE.as_ptr() as *const CChar;
 
     RustResult {
         success: true,
@@ -59,19 +64,15 @@ pub extern "C" fn rust_sdk_process_string(input: *const c_char) -> RustResult {
     }
 }
 
-/// Free memory allocated by Rust
+/// Free memory - no-op since we don't allocate
 #[no_mangle]
-pub extern "C" fn rust_sdk_free_string(ptr: *mut c_char) {
-    if !ptr.is_null() {
-        unsafe {
-            let _ = CString::from_raw(ptr);
-        }
-    }
+pub extern "C" fn rust_sdk_free_string(_ptr: *mut CChar) {
+    // No-op: we don't allocate memory anymore
 }
 
-/// Demonstrate CPU-intensive work (iterative version is smaller)
+/// Iterative fibonacci - minimal implementation
 #[no_mangle]
-pub extern "C" fn rust_sdk_fibonacci(n: c_int) -> i64 {
+pub extern "C" fn rust_sdk_fibonacci(n: CInt) -> i64 {
     if n <= 1 {
         return n as i64;
     }
@@ -79,17 +80,20 @@ pub extern "C" fn rust_sdk_fibonacci(n: c_int) -> i64 {
     let mut a: i64 = 0;
     let mut b: i64 = 1;
     
-    for _ in 2..=n {
+    let mut i = 2;
+    while i <= n {
         let temp = a + b;
         a = b;
         b = temp;
+        i += 1;
     }
     
     b
 }
 
-/// Get SDK version (using static string to avoid allocations)
+/// Get SDK version - static string, no allocation
 #[no_mangle]
-pub extern "C" fn rust_sdk_version() -> *const c_char {
-    b"1.0.0\0".as_ptr() as *const c_char
+pub extern "C" fn rust_sdk_version() -> *const CChar {
+    static VERSION: &[u8] = b"1.0.0\0";
+    VERSION.as_ptr() as *const CChar
 } 
